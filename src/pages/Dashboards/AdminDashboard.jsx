@@ -80,22 +80,6 @@ const ClientDashboard = () => {
   const [previewUrl, setPreviewUrl] = useState("");
   const [flag, setFlag] = useState('');
   const [location, setLocation] = useState('');
-  
-  useEffect(() => {
-    let data = localStorage.getItem("AccessToken");
-    let decodedToken = jwtDecode(data);
-  
-    const currentTime = Date.now() / 1000; // Current time in seconds
-  
-    if (decodedToken.exp < currentTime) {
-      // Token has expired
-      localStorage.removeItem("AccessToken");
-      localStorage.removeItem("remindDelete");
-      navigate("/Login");
-    } else if (decodedToken.EmployeeRole !== "Admin") {
-      navigate("/Login"); // Redirect if not admin
-    }
-  }, [navigate]);
 
   useEffect(() => {
     const fetchData = async () => {
