@@ -39,7 +39,6 @@ const Clientcontent = () => {
       const response = await getTask({
         CompanyID: decodedToken.CompanyID,
         CompanyName: decodedToken.CompanyName,
-        EmployeeID: decodedToken.EmployeeID,
       });
       const fetchedTasks = response.tasks;
       SetTasks(fetchedTasks);
