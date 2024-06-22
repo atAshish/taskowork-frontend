@@ -925,7 +925,7 @@ export default function Assigntask() {
       <div className="flex-col mt-10 justify-between mx-14 mb-7 overflow-y-hidden">
         <div className="flex justify-between mb-5 shadow-sm  p-4 rounded">
           <div className="flex bg-gray-900 text-white rounded-lg justify-center items-center p-2">
-            Total Coins : <span className=" text-lg ml-2"> 0</span>{" "}
+            Total Coins : <span className=" text-lg ml-2"> {decodedToken.Blip}</span>{" "} 
             <img src={blips} className="w-10 h-8 animate-pulse" alt="" />
           </div>
           <div className="text-4xl capitalize font-semibold items-center flex">
@@ -1016,7 +1016,7 @@ export default function Assigntask() {
         </div>
         <div className="flex justify-between bg-white rounded-lg p-4 items-end">
           <div className="flex bg-white rounded-lg shadow-md p-4 gap-4 justify-between w-full">
-            <div className="flex items-center gap-4 w-full">
+            <div className="flex items-center gap-4 w-full ">
               <div className="relative">
                 <select
                   name="sort"
@@ -1062,12 +1062,7 @@ export default function Assigntask() {
                 <FilterMenu data={data} applyFilter={handleFilter} />
               )}
             </div>
-            <Button
-              onClick={toggleAddTaskDrawer}
-              className="text-white rounded-lg py-2 items-center min-w-max bg-gradient-to-r from-gray to-black"
-            >
-              + Add Task
-            </Button>
+          
           </div>
         </div>
       </div>

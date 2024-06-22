@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Bar } from "react-chartjs-2";
 import { Chip, Typography, Button } from "@material-tailwind/react";
 import { DefaultSkeleton } from "../../../components/skeleton/skeleton.jsx";
@@ -11,6 +11,7 @@ import Calendar from "../../../components/dashboard/Calender/Calender";
 import { getTask } from "../../../service/api";
 import { jwtDecode } from "jwt-decode";
 import blips from "../../../assets/img/WhatsApp_Image_2024-05-26_at_11.49.25_AM-removebg-preview.png";
+import { gsap } from 'gsap';
 
 const Clientcontent = () => {
   const [date, setDate] = useState(new Date());
@@ -31,13 +32,14 @@ const Clientcontent = () => {
   const [inReviewTasksCount, setInReviewTasksCount] = useState(0);
 
   // Example: Assuming you have a state or a way to fetch the blip points
-  const [blipPoints, setBlipPoints] = useState(0);
+  const blipPoints = decodedToken.Blip || "∞";
   const fetchTasks = async () => {
     setIsLoading(true);
     try {
       const response = await getTask({
         CompanyID: decodedToken.CompanyID,
         CompanyName: decodedToken.CompanyName,
+        EmployeeID: decodedToken.EmployeeID,
       });
       const fetchedTasks = response.tasks;
       SetTasks(fetchedTasks);
@@ -46,18 +48,20 @@ const Clientcontent = () => {
         open: 0,
         inprogress: 0,
         completed: 0,
-        inreview: 0
+        inreview: 0, // Ensure this key matches the transformed TaskStatus
       };
-      
-      fetchedTasks.forEach(task => {
+
+      fetchedTasks.forEach((task) => {
         const status = task.TaskStatus.toLowerCase().trim();
-        if (statusCounts.hasOwnProperty(status)) {
+        if (status === "review") { // Handle "Review" specifically if necessary
+          statusCounts.inreview++;
+        } else if (statusCounts.hasOwnProperty(status)) {
           statusCounts[status]++;
         } else {
           console.warn(`Unknown status: ${status}`);
         }
       });
-      
+
       setOpenTasksCount(statusCounts.open);
       setInProcessTasksCount(statusCounts.inprogress);
       setCompletedTasksCount(statusCounts.completed);
@@ -67,7 +71,7 @@ const Clientcontent = () => {
       console.error(error);
       setIsLoading(false);
     }
-};
+  };
 
   useEffect(() => {
     fetchTasks();
@@ -129,10 +133,14 @@ const Clientcontent = () => {
                 <span
                   className={`px-2 py-1 rounded-full text-sm font-medium capitalize ${
                     task.TaskStatus === "Open"
-                      ? "bg-red-100 text-red-800"
+                      ? "bg-orange-200 text-orange-900"
                       : task.TaskStatus === "Inprogress"
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-green-100 text-green-800"
+                      ? "bg-purple-200 text-purple-900"
+                      : task.TaskStatus === "Completed"
+                      ? "bg-teal-200 text-teal-900"
+                      : task.TaskStatus === "Review"
+                      ? "bg-yellow-200 text-yellow-900"
+                      : "bg-gray-200 text-gray-800" // Default case for unknown statuses
                   }`}
                 >
                   {task.TaskStatus}
@@ -151,7 +159,7 @@ const Clientcontent = () => {
                     : "bg-red-200 text-red-800"
                 }`}
               >
-                {task.Frequency}
+                {new Date(task.TaskDeadlineDate).toLocaleDateString()}
               </span>
             </div>
           </div>
@@ -170,7 +178,12 @@ const Clientcontent = () => {
     datasets: [
       {
         label: "Tasks",
-        data: [openTasksCount, inProcessTasksCount, completedTasksCount, inReviewTasksCount],
+        data: [
+          openTasksCount,
+          inProcessTasksCount,
+          completedTasksCount,
+          inReviewTasksCount,
+        ],
         backgroundColor: ["#FF6384", "#36A2EB", "#A1DD70", "#FFD700"],
       },
     ],
@@ -220,6 +233,22 @@ const Clientcontent = () => {
       duration: 2000,
     },
   };
+
+  const blipRef = useRef(null);
+
+  useEffect(() => {
+    gsap.fromTo(blipRef.current, 
+      { boxShadow: '0 0 0px rgba(255,255,255,0)' },
+      {
+        boxShadow: '0 0 20px rgba(255,255,255,1)',
+        repeat: -1,
+        yoyo: true,
+        duration: 0.5,
+        ease: 'power1.inOut',
+        paused: true
+      }
+    );
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center m-5 sm:gap-5 md:flex-col">
@@ -347,9 +376,12 @@ const Clientcontent = () => {
           <div className="flex flex-col items-center">
             <div className="flex justify-center items-center mb-4 h-3/4 relative ">
               <img
+                ref={blipRef}
                 src={blips}
                 alt="Blip Points"
-                className="w-fit cursor-pointer hover:animate-spin  h-24 rounded-full border-gray-300 hover:rotate-360 transition-transform duration-500"
+                className="w-fit cursor-pointer hover:animate-spin h-24 rounded-full border-gray-300 transition-transform duration-500"
+                onMouseEnter={() => gsap.to(blipRef.current, { boxShadow: '0 0 20px rgba(255,255,255,1)', scale: 1.1 })}
+                onMouseLeave={() => gsap.to(blipRef.current, { boxShadow: '0 0 0px rgba(255,255,255,0)', scale: 1 })}
               />
             </div>
             <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white p-4 rounded-lg shadow-lg text-center w-3/4 h-3/6 relative bottom-1 ">

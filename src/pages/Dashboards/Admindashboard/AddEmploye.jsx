@@ -1,5 +1,8 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
+import Select, { components } from "react-select";
+import CreatableSelect from "react-select/creatable";
 
 import {
   Card,
@@ -8,7 +11,7 @@ import {
   Input,
   Dialog,
   Spinner,
-  Slider
+  Radio,
 } from "@material-tailwind/react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -42,7 +45,7 @@ const EmployeeList = () => {
     Designation: "",
     Branch: "",
     Location: "",
-    EmployeeDepartment: ""
+    EmployeeDepartment: "",
   });
   const [editedEmployee, setEditedEmployee] = useState({
     EmployeeName: "",
@@ -53,28 +56,38 @@ const EmployeeList = () => {
     Designation: "",
     Branch: "",
     Location: "",
-    EmployeeDepartment: ""
+    EmployeeDepartment: "",
   });
   const [employees, setEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [departments, setDepartments] = useState([]);
 
   useEffect(() => {
     fetchEmployeeList();
   }, []);
 
-  const fetchEmployeeList = async () => {
+   const fetchEmployeeList = async () => {
     setLoading(true);
     try {
       const response = await getEmployeeList(decodedToken.CompanyID);
       setEmployees(response.employees);
+      // Extract unique departments from the employee list
+      const uniqueDepartments = [
+        ...new Set(
+          response.employees.map((employee) => employee.EmployeeDepartment)
+        ),
+      ];
+      setDepartments(uniqueDepartments);
+      if (response.employees.length === 0) {
+        toast.info("No employees found. Consider adding some!");
+      }
     } catch (error) {
       console.error("Failed to fetch employee list:", error);
       toast.error("Failed to fetch employee list");
-      // Set demo data on API failure
-      setEmployees([
-        { id: 1, EmployeeName: "John Doe", EmployeeEmail: "john@example.com", Role: "Admin", EmployeeDepartment: "HR" },
-        { id: 2, EmployeeName: "Jane Smith", EmployeeEmail: "jane@example.com", Role: "Employee", EmployeeDepartment: "Finance" }
-      ]);
+      // Set empty array on API failure
+      setEmployees([]);
+      setDepartments([]);
     } finally {
       setLoading(false);
     }
@@ -99,31 +112,18 @@ const EmployeeList = () => {
     }
   };
 
-  const handleRoleChange = (value) => {
-    if (value === 1) {
-      if (selectedEmployee) {
-        setEditedEmployee({
-          ...editedEmployee,
-          Role: "Admin",
-        });
-      } else {
-        setFormData({
-          ...formData,
-          Role: "Admin",
-        });
-      }
+  const handleRoleChange = (e) => {
+    const { value } = e.target;
+    if (selectedEmployee) {
+      setEditedEmployee({
+        ...editedEmployee,
+        Role: value,
+      });
     } else {
-      if (selectedEmployee) {
-        setEditedEmployee({
-          ...editedEmployee,
-          Role: "Employee",
-        });
-      } else {
-        setFormData({
-          ...formData,
-          Role: "Employee",
-        });
-      }
+      setFormData({
+        ...formData,
+        Role: value,
+      });
     }
   };
 
@@ -138,7 +138,7 @@ const EmployeeList = () => {
       Designation: "",
       Branch: "",
       Location: "",
-      EmployeeDepartment: ""
+      EmployeeDepartment: "",
     });
     setSelectedEmployee(null);
   };
@@ -159,9 +159,14 @@ const EmployeeList = () => {
         toast.success("Employee updated successfully");
       } else {
         // Register new employee
+        const newDepartment = formData.EmployeeDepartment;
+        if (!departments.includes(newDepartment)) {
+          // Add the new department to the departments array
+          setDepartments([...departments, newDepartment]);
+        }
         await registerEmployee(formData);
         fetchEmployeeList();
-        closeDialog(); // Ensure this is being called on success
+        closeDialog();
         toast.success("Employee added successfully");
       }
     } catch (error) {
@@ -203,14 +208,25 @@ const EmployeeList = () => {
       Branch: employee.Branch,
       Location: employee.Location,
       Role: employee.Role,
-      EmployeeDepartment: employee.EmployeeDepartment
+      EmployeeDepartment: employee.EmployeeDepartment,
     });
     setSelectedEmployee(employee);
     setIsDialogOpen(true);
   };
 
+  const filterEmployees = (employee, searchQuery) => {
+    const { EmployeeName, Role, EmployeeEmail, EmployeeDepartment } = employee;
+    const query = searchQuery.toLowerCase();
+    return (
+      EmployeeName.toLowerCase().includes(query) ||
+      Role.toLowerCase().includes(query) ||
+      EmployeeEmail.toLowerCase().includes(query) ||
+      EmployeeDepartment.toLowerCase().includes(query)
+    );
+  };
+
   const filteredEmployees = employees.filter((employee) =>
-    employee.EmployeeName.toLowerCase().includes(searchQuery.toLowerCase())
+    filterEmployees(employee, searchQuery)
   );
 
   return (
@@ -229,7 +245,11 @@ const EmployeeList = () => {
               iconSize="sm"
               className="w-full md:w-60"
             />
-            <Button onClick={handleClick} variant="gradient" className="bg-gradient-to-r from-blue-gray-800 to-blue-gray-900 text-white text-sm">
+            <Button
+              onClick={handleClick}
+              variant="gradient"
+              className="bg-gradient-to-r from-blue-gray-800 to-blue-gray-900 text-white text-sm"
+            >
               <span className="text-sm">Add Employee +</span>
             </Button>
           </div>
@@ -245,14 +265,23 @@ const EmployeeList = () => {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col">
-                  <label htmlFor="employeeName" className="text-gray-700 font-semibold mb-2">Employee Name</label>
+                  <label
+                    htmlFor="employeeName"
+                    className="text-gray-700 font-semibold mb-2"
+                  >
+                    Employee Name
+                  </label>
                   <Input
                     id="employeeName"
                     type="text"
                     color="lightBlue"
                     placeholder="Enter employee name"
                     name="EmployeeName"
-                    value={selectedEmployee ? editedEmployee.EmployeeName : formData.EmployeeName}
+                    value={
+                      selectedEmployee
+                        ? editedEmployee.EmployeeName
+                        : formData.EmployeeName
+                    }
                     onChange={handleInputChange}
                     required
                     fullWidth
@@ -260,14 +289,23 @@ const EmployeeList = () => {
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label htmlFor="employeeEmail" className="text-gray-700 font-semibold mb-2">Employee Email</label>
+                  <label
+                    htmlFor="employeeEmail"
+                    className="text-gray-700 font-semibold mb-2"
+                  >
+                    Employee Email
+                  </label>
                   <Input
                     id="employeeEmail"
                     type="email"
                     color="lightBlue"
                     placeholder="Enter employee email"
                     name="EmployeeEmail"
-                    value={selectedEmployee ? editedEmployee.EmployeeEmail : formData.EmployeeEmail}
+                    value={
+                      selectedEmployee
+                        ? editedEmployee.EmployeeEmail
+                        : formData.EmployeeEmail
+                    }
                     onChange={handleInputChange}
                     required
                     fullWidth
@@ -275,157 +313,286 @@ const EmployeeList = () => {
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label htmlFor="Password" className="text-gray-700 font-semibold mb-2">Password</label>
+                  <label
+                    htmlFor="employeePassword"
+                    className="text-gray-700 font-semibold mb-2"
+                  >
+                    Password
+                  </label>
                   <Input
+                    id="employeePassword"
                     type="password"
-                    id="Password"
                     color="lightBlue"
-                    placeholder="Enter employee password"
+                    placeholder="Enter password"
                     name="Password"
-                    value={selectedEmployee ? editedEmployee.Password : formData.Password}
+                    value={
+                      selectedEmployee
+                        ? editedEmployee.Password
+                        : formData.Password
+                    }
                     onChange={handleInputChange}
                     required
+                    fullWidth
                     className="rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label className="text-gray-700 font-semibold mb-2">Role</label>
-                  <Slider
-                    id="role-slider"
-                    min={0}
-                    max={1}
-                    step={1}
-                    value={selectedEmployee ? editedEmployee.Role === "Admin" ? 1 : 0 : formData.Role === "Admin" ? 1 : 0}
-                    onChange={(value) => handleRoleChange(value)}
+                  <label
+                    htmlFor="reportsTo"
+                    className="text-gray-700 font-semibold mb-2"
+                  >
+                    Reports To
+                  </label>
+                  <Input
+                    id="reportsTo"
+                    type="text"
+                    color="lightBlue"
+                    placeholder="Enter supervisor"
+                    name="ReportsTo"
+                    value={
+                      selectedEmployee
+                        ? editedEmployee.ReportsTo
+                        : formData.ReportsTo
+                    }
+                    onChange={handleInputChange}
+                    required
+                    fullWidth
+                    className="rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
-                  <div className="flex justify-between">
-                    <span>Employee</span>
-                    <span>Admin</span>
+                </div>
+                <div className="flex flex-col">
+                  <label
+                    htmlFor="designation"
+                    className="text-gray-700 font-semibold mb-2"
+                  >
+                    Designation
+                  </label>
+                  <Input
+                    id="designation"
+                    type="text"
+                    color="lightBlue"
+                    placeholder="Enter designation"
+                    name="Designation"
+                    value={
+                      selectedEmployee
+                        ? editedEmployee.Designation
+                        : formData.Designation
+                    }
+                    onChange={handleInputChange}
+                    required
+                    fullWidth
+                    className="rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label
+                    htmlFor="branch"
+                    className="text-gray-700 font-semibold mb-2"
+                  >
+                    Branch
+                  </label>
+                  <Input
+                    id="branch"
+                    type="text"
+                    color="lightBlue"
+                    placeholder="Enter branch"
+                    name="Branch"
+                    value={
+                      selectedEmployee ? editedEmployee.Branch : formData.Branch
+                    }
+                    onChange={handleInputChange}
+                    required
+                    fullWidth
+                    className="rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label
+                    htmlFor="location"
+                    className="text-gray-700 font-semibold mb-2"
+                  >
+                    Location
+                  </label>
+                  <Input
+                    id="location"
+                    type="text"
+                    color="lightBlue"
+                    placeholder="Enter location"
+                    name="Location"
+                    value={
+                      selectedEmployee
+                        ? editedEmployee.Location
+                        : formData.Location
+                    }
+                    onChange={handleInputChange}
+                    required
+                    fullWidth
+                    className="rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label
+                    htmlFor="role"
+                    className="text-gray-700 font-semibold mb-2"
+                  >
+                    Role
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <Radio
+                      id="role-employee"
+                      name="Role"
+                      value="Employee"
+                      color="lightBlue"
+                      checked={
+                        selectedEmployee
+                          ? editedEmployee.Role === "Employee"
+                          : formData.Role === "Employee"
+                      }
+                      onChange={handleRoleChange}
+                      label="Employee"
+                    />
+                    <Radio
+                      id="role-admin"
+                      name="Role"
+                      value="Admin"
+                      color="lightBlue"
+                      checked={
+                        selectedEmployee
+                          ? editedEmployee.Role === "Admin"
+                          : formData.Role === "Admin"
+                      }
+                      onChange={handleRoleChange}
+                      label="Admin"
+                    />
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  <label htmlFor="ReportsTo" className="text-gray-700 font-semibold mb-2">Reports To</label>
-                  <Input
-                    id="ReportsTo"
-                    type="text"
-                    placeholder="Enter Reports To"
-                    name="ReportsTo"
-                    value={selectedEmployee ? editedEmployee.ReportsTo : formData.ReportsTo}
-                    onChange={handleInputChange}
-                    required
-                    className="rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label htmlFor="Designation" className="text-gray-700 font-semibold mb-2">Designation</label>
-                  <Input
-                    id="Designation"
-                    type="text"
-                    placeholder="Enter Designation"
-                    name="Designation"
-                    value={selectedEmployee ? editedEmployee.Designation : formData.Designation}
-                    onChange={handleInputChange}
-                    required
-                    className="rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label htmlFor="Branch" className="text-gray-700 font-semibold mb-2">Branch</label>
-                  <Input
-                    id="Branch"
-                    type="text"
-                    placeholder="Enter Branch"
-                    name="Branch"
-                    value={selectedEmployee ? editedEmployee.Branch : formData.Branch}
-                    onChange={handleInputChange}
-                    required
-                    className="rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label htmlFor="Location" className="text-gray-700 font-semibold mb-2">Location</label>
-                  <Input
-                    id="Location"
-                    type="text"
-                    placeholder="Enter Location"
-                    name="Location"
-                    value={selectedEmployee ? editedEmployee.Location : formData.Location}
-                    onChange={handleInputChange}
-                    required
-                    className="rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label htmlFor="EmployeeDepartment" className="text-gray-700 font-semibold mb-2">Department</label>
-                  <Input
-                    id="EmployeeDepartment"
-                    type="text"
-                    placeholder="Enter Department"
+                  <label
+                    htmlFor="employeeDepartment"
+                    className="text-gray-700 font-semibold mb-2"
+                  >
+                    Department
+                  </label>
+                  <CreatableSelect
+                    id="employeeDepartment"
                     name="EmployeeDepartment"
-                    value={selectedEmployee ? editedEmployee.EmployeeDepartment : formData.EmployeeDepartment}
-                    onChange={handleInputChange}
-                    required
+                    value={{
+                      value: selectedDepartment,
+                      label: selectedDepartment,
+                    }}
+                    options={departments.map((department) => ({
+                      value: department,
+                      label: department,
+                    }))}
+                    onChange={(selectedOption) => {
+                      const departmentValue = selectedOption.value;
+                      if (selectedEmployee) {
+                        setEditedEmployee({
+                          ...editedEmployee,
+                          EmployeeDepartment: departmentValue,
+                        });
+                      } else {
+                        setFormData({
+                          ...formData,
+                          EmployeeDepartment: departmentValue,
+                        });
+                      }
+                      setSelectedDepartment(departmentValue);
+                    }}
+                    onCreateOption={(newDepartment) => {
+                      setDepartments([...departments, newDepartment]);
+                      if (selectedEmployee) {
+                        setEditedEmployee({
+                          ...editedEmployee,
+                          EmployeeDepartment: newDepartment,
+                        });
+                      } else {
+                        setFormData({
+                          ...formData,
+                          EmployeeDepartment: newDepartment,
+                        });
+                      }
+                      setSelectedDepartment(newDepartment);
+                    }}
                     className="rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                   />
                 </div>
               </div>
-              <div className="flex justify-center gap-5 mt-6">
-                <Button type="submit" color="lightBlue" variant="gradient" className="bg-gradient-to-r from-green-400 to-green-600 text-white">
-                  {selectedEmployee ? "Update Employee" : "Add Employee"}
-                </Button>
-                <Button onClick={closeDialog} color="gray" variant="text" className="hover:bg-gray-200">
-                  Close
-                </Button>
-              </div>
+              <Button
+                type="submit"
+                variant="gradient"
+                className="bg-gradient-to-r from-blue-gray-800 to-blue-gray-900 text-white"
+              >
+                {selectedEmployee ? "Update Employee" : "Add Employee"}
+              </Button>
             </form>
           </Dialog>
           {loading ? (
-            <div className="flex justify-center items-center h-80">
-              <Spinner color="blue-500" className="w-16 h-16" />
+            <div className="flex justify-center items-center h-full">
+              <Spinner color="black" className="w-5 h-5" />
             </div>
           ) : (
-            <table className="w-full mt-5 text-sm md:text-base">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="py-3 px-2 text-left">Name</th>
-                  <th className="py-3 px-2 text-left">Role</th>
-                  <th className="py-3 px-2 text-left">Email</th>
-                  <th className="py-3 px-2 text-left">Department</th>
-                  <th className="py-3 px-2 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredEmployees.length === 0 ? (
+            <div className="overflow-auto">
+              <table className="min-w-full bg-white border border-gray-200">
+                <thead>
                   <tr>
-                    <td colSpan="5" className="py-2 text-center">No employees found</td>
+                    <th className="text-left py-2 px-4 border-b">Employee ID</th>
+                    <th className="text-left py-2 px-4 border-b">Name</th>
+                    <th className="text-left py-2 px-4 border-b">Email</th>
+                    <th className="text-left py-2 px-4 border-b">Role</th>
+                    <th className="text-left py-2 px-4 border-b">Department</th>
+                    <th className="text-left py-2 px-4 border-b">Actions</th>
                   </tr>
-                ) : (
-                  filteredEmployees.map((employee) => (
-                    <tr key={employee.id} className="hover:bg-gray-50">
-                      <td className="py-2 px-2">{employee.EmployeeName}</td>
-                      <td className="py-2 px-2">{employee.Role}</td>
-                      <td className="py-2 px-2">{employee.EmployeeEmail}</td>
-                      <td className="py-2 px-2">{employee.EmployeeDepartment}</td>
-                      <td className="py-2 px-2 flex gap-5">
-                      <Button
-                          onClick={() => handleEdit(employee)}
-                          variant="outlined"
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          onClick={() => handleDelete(employee)}
-                          variant="filled"
-                          className="bg-red-500 hover:bg-red-700 text-white"
-                        >
-                          Delete
-                        </Button>
+                </thead>
+                <tbody>
+                  {filteredEmployees.length > 0 ? (
+                    filteredEmployees.map((employee) => (
+                      <tr key={employee.EmployeeID}>
+                        <td className="text-left py-2 px-4 border-b">{employee.EmployeeID}</td>
+                        <td className="text-left py-2 px-4 border-b">
+                          {employee.EmployeeName}
+                        </td>
+                        <td className="text-left py-2 px-4 border-b">
+                          {employee.EmployeeEmail}
+                        </td>
+                        <td className="text-left py-2 px-4 border-b">
+                          {employee.Role}
+                        </td>
+                        <td className="text-left py-2 px-4 border-b">
+                          {employee.EmployeeDepartment}
+                        </td>
+                        <td className="text-left py-2 px-4 border-b flex items-center gap-2">
+                          <Button
+                            onClick={() => handleEdit(employee)}
+                            size="sm"
+                            color="blue"
+                            variant="filled"
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            onClick={() => handleDelete(employee)}
+                            size="sm"
+                            color="red"
+                            variant="filled"
+                          >
+                            Delete
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="text-center py-4">
+                        <div className="text-gray-500 text-lg font-semibold">
+                          No employees found
+                        </div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardBody>
       </Card>

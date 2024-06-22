@@ -1,6 +1,9 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react/no-unescaped-entities */
+
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef,useMemo } from "react";
 import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
 import { gsap } from "gsap";
 import {
@@ -13,7 +16,7 @@ import {
 } from "@material-tailwind/react"; // Import Input from Material Tailwind
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Sound from "../../../assets/sound/sound.mp3";
+import Sound from "../../../assets/sound/stop-13692.mp3";
 import blips from "../../../assets/img/WhatsApp_Image_2024-05-26_at_11.49.25_AM-removebg-preview.png";
 import {
   AdjustmentsHorizontalIcon,
@@ -32,6 +35,7 @@ import {
   updateTaskStatus,
 } from "../../../service/api";
 // import outlined from "@material-tailwind/react/theme/components/timeline/timelineIconColors/outlined";
+import { Dialog, DialogHeader, DialogBody, DialogFooter } from "@material-tailwind/react";
 
 const data = localStorage.getItem("AccessToken");
 let decodedToken = {};
@@ -53,7 +57,65 @@ const initialData = {
   columnOrder: ["Open", "In Progress", "Review", "Completed", "Deleted"],
 };
 
+// const initialData = {
+//   columns: {
+//     Open: { id: "Open", title: "Open", taskIds: ["task-1"] },
+//     "In Progress": { id: "In Progress", title: "In Progress", taskIds: ["task-2","task-3"] },
+//     Review: { id: "Review", title: "Review", taskIds: [] },
+//     Completed: { id: "Completed", title: "Completed", taskIds: [] },
+//     Deleted: { id: "Deleted", title: "Deleted", taskIds: [] },
+//   },
+//   tasks: {
+//     "task-1": {
+//       id: "task-1",
+//       title: "Demo Task",
+//       username: "billy jean",
+//       EmployeeName: "billy jean",
+//       text: "This is a demo task description.",
+//       department: "lopment",
+//       priority: "High",
+//       daysLeft: 5,
+//       tags: ["urgent", "new"],
+//       image: "path_to_image",
+//     },
+//     "task-2": {
+//       id: "task-2",
+//       title: "Demo Task",
+//       username: "John Doe",
+//       text: "This is a demo task description.",
+//       department: "Development",
+//       priority: "High",
+//       daysLeft: 5,
+//       tags: ["urgent", "new"],
+//       image: "path_to_image",
+//     },
+//     "task-3": {
+//       id: "task-3",
+//       title: "Demo Task",
+//       username: "John Doe",
+//       text: "This is a demo task description.",
+//       department: "Development",
+//       priority: "High",
+//       daysLeft: 5,
+//       tags: ["urgent", "new"],
+//       image: "path_to_image",
+//     },
+
+//   },
+//   columnOrder: ["Open", "In Progress", "Review", "Completed", "Deleted"],
+// };
 // Dependency array to re-run the effect when CompanyID changes
+function mapStatusToColumnId(apiStatus) {
+  const statusMapping = {
+    Inprogress: "In Progress",  // API status to your column ID
+    Open: "Open",
+    Review: "Review",
+    Completed: "Completed",
+    Deleted: "Deleted"
+  };
+
+  return statusMapping[apiStatus] || "Unknown";  // Default to "Unknown" if no match found
+}
 
 const handleMarkAsCompleted = (taskId) => {
   console.log(taskId, "hello");
@@ -90,15 +152,15 @@ function Draggable({
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({ id });
   const cardRef = useRef(null);
-  useEffect(() => {
-    if (cardRef.current) {
-      gsap.fromTo(
-        cardRef.current,
-        { opacity: 0, y: 50 },
-        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
-      );
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (cardRef.current) {
+  //     gsap.fromTo(
+  //       cardRef.current,
+  //       { opacity: 0, y: 50 },
+  //       { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
+  //     );
+  //   }
+  // }, []);
 
   useEffect(() => {
     if (searchQuery && text.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -145,9 +207,9 @@ function Draggable({
       case "High":
         return "#FF0000";
       case "Medium":
-        return "bg-yellow-500";
+        return "#FFF455";
       case "Low":
-        return "bg-green-500";
+        return "#06D001";
       default:
         return "bg-gray-500";
     }
@@ -189,17 +251,16 @@ function Draggable({
       }}
       {...draggableProps}
     >
-      <div
-        className={`absolute left-0 top-0 bottom-0 w-1 ${getPriorityColor(
-          priority
-        )}`}
-      ></div>
+    <div
+  className={`absolute left-0 top-0 bottom-0 w-1`}
+  style={{ backgroundColor: getPriorityColor(priority) }}
+></div>
       <div
         className="flex justify-between items-center cursor-pointer"
         onDoubleClick={toggleAccordion} // Changed from onClick to onDoubleClick
       >
         <div className="flex items-center">
-          <Avatar src={image} alt={username} size="sm" className="mr-2" />
+          {/* <Avatar src={image} alt={username} size="sm" className="mr-2" /> */}
           <h4 className="text-red mb-2">
             {title}{" "}
             <Chip
@@ -218,11 +279,7 @@ function Draggable({
           <p className="text-gray-800">
             {highlightText(text.length > 40 ? `${text.slice(0, 28)}...` : text)}
           </p>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {tags.map((tag, index) => (
-              <Chip key={index} variant="outlined" size="sm" value={tag} />
-            ))}
-          </div>
+        
           <p className="text-gray-500 mt-2">{daysLeft} days left</p>
           <Chip
             size="sm"
@@ -265,7 +322,7 @@ function Draggable({
             </div>
             <div className="p-4 prose max-w-none">
               <div className="flex items-center mb-2">
-                <Avatar src={image} alt={username} size="sm" className="mr-2" />
+                {/* <Avatar src={image} alt={username} size="sm" className="mr-2" /> */}
                 <span className="text-gray-700 font-semibold">{username}</span>
               </div>
               <div className=" ">
@@ -276,11 +333,6 @@ function Draggable({
                 >
                   {text}
                 </p>
-              </div>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {tags.map((tag, index) => (
-                  <Chip key={index} variant="outlined" size="sm" value={tag} />
-                ))}
               </div>
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center">
@@ -349,10 +401,12 @@ function Droppable({ id, children, data, clearDeletedTasks }) {
   );
 }
 
-export default function App() {
+export default function Assigntask() {
   const [datatemp, setDatatep] = useState([]);
   const [data, setData] = useState(initialData);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [currentCardId, setCurrentCardId] = useState(null);
   const [isAddTaskDrawerOpen, setIsAddTaskDrawerOpen] = useState(false);
   const [newTask, setNewTask] = useState({
     title: "",
@@ -362,8 +416,42 @@ export default function App() {
     priority: "Low", // Default priority
     dueDate: "", // Added due date to the state
   });
+  const proceedWithDeletion = (cardId) => {
+    // Call the API to delete the task from the backend if necessary
+    deleteTask( {CompanyID: decodedToken.CompanyID, CompanyName: decodedToken.CompanyName, TaskID: cardId})
+      .then(() => {
+        toast.success(`Task ${cardId} deleted successfully!`);
+        setIsDeleteDialogOpen(false);
+  
+        // Update the local state to remove the task from the UI
+        setData((prevData) => {
+          const newColumns = { ...prevData.columns };
+          Object.keys(newColumns).forEach(column => {
+            newColumns[column].taskIds = newColumns[column].taskIds.filter(id => id !== cardId);
+          });
+  
+          // Optionally, remove the task from the tasks object if it's maintained separately
+          const newTasks = { ...prevData.tasks };
+          delete newTasks[cardId];
+  
+          return {
+            ...prevData,
+            tasks: newTasks,
+            columns: newColumns
+          };
+        });
+      })
+      .catch((error) => {
+        console.error("Failed to delete task:", error);
+        toast.error("Failed to delete task.");
+      });
+  };
+
+  const handleCancelDeletion = () => {
+    setIsDeleteDialogOpen(false);
+  };
   const clearSound = new Audio();
-  clearSound.src = { Sound };
+  clearSound.src =  Sound ;
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   clearSound.addEventListener(
     "canplaythrough",
@@ -390,7 +478,7 @@ export default function App() {
 
   useEffect(() => {
     fetchEmployeeList();
-  }, []);
+  }, [isAddTaskDrawerOpen]);
 
   const fetchEmployeeList = async () => {
     try {
@@ -403,104 +491,105 @@ export default function App() {
       // Set demo data on API failure
     }
   };
+  const fetchTasks = async () => {
+    try {
+      const response = await getTask({
+        CompanyID: decodedToken.CompanyID,
+        CompanyName: decodedToken.CompanyName,
+      });
+      console.log(data, "tempdata");
+
+      if (response && response.tasks) {
+        const tasks = response.tasks;
+        const newTasks = {};
+        const newColumns = {
+          Open: { ...initialData.columns.Open, taskIds: [] },
+          "In Progress": {
+            ...initialData.columns["In Progress"],
+            taskIds: [],
+          },
+          Review: { ...initialData.columns.Review, taskIds: [] },
+          Completed: { ...initialData.columns.Completed, taskIds: [] },
+          Deleted: { ...initialData.columns.Deleted, taskIds: [] },
+        };
+
+        // Populate the tasks and assign them to the correct columns
+        tasks.forEach((task) => {
+          newTasks[task.TaskID] = {
+            id: task.TaskID,
+            title: task.TaskTitle,
+            username: task.EmployeeName,
+            text: task.TaskDescription,
+            department: task.TaskDepartment,
+            priority: task.TaskPriority,
+            daysLeft: Math.ceil(
+              (new Date(task.TaskDeadlineDate) - new Date()) /
+                (1000 * 60 * 60 * 24)
+            ), // Calculate days left
+            assignedTo: task.AssignedTo, // Assuming 'AssignedTo' is the field name in the API response
+            TaskBlipPoints: task.TaskBlipPoints,
+          };
+        
+          // Use the mapping function to get the correct column ID
+          const columnId = mapStatusToColumnId(task.TaskStatus);
+        
+          if (newColumns[columnId]) {
+            newColumns[columnId].taskIds.push(task.TaskID);
+          } else {
+            console.error(`Column ${columnId} not found`);
+          }
+        });
+
+        setData((prevData) => ({
+          ...prevData,
+          tasks: newTasks,
+          columns: newColumns,
+        }));
+        console.log(newTasks,"newtask");
+      }
+    } catch (error) {
+      console.error("Failed to fetch tasks:", error);
+      toast.error("Failed to load tasks. Displaying demo tasks.");
+    }
+  };
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const response = await getTask({
-          CompanyID: decodedToken.CompanyID,
-          CompanyName: decodedToken.CompanyName,
-        });
-        console.log(data, "tempdata");
 
-        if (response && response.tasks) {
-          const tasks = response.tasks;
-          const newTasks = {};
-          const newColumns = {
-            Open: { ...initialData.columns.Open, taskIds: [] },
-            "In Progress": {
-              ...initialData.columns["In Progress"],
-              taskIds: [],
-            },
-            Review: { ...initialData.columns.Review, taskIds: [] },
-            Completed: { ...initialData.columns.Completed, taskIds: [] },
-            Deleted: { ...initialData.columns.Deleted, taskIds: [] },
-          };
-
-          // Populate the tasks and assign them to the correct columns
-          tasks.forEach((task) => {
-            newTasks[task.TaskID] = {
-              id: task.TaskID,
-              title: task.TaskTitle,
-              username: task.EmployeeName,
-              text: task.TaskDescription,
-              department: task.TaskDepartment,
-              priority: task.TaskPriority,
-              daysLeft: Math.ceil(
-                (new Date(task.TaskDeadlineDate) - new Date()) /
-                  (1000 * 60 * 60 * 24)
-              ), // Calculate days left
-              assignedTo: task.AssignedTo, // Assuming 'AssignedTo' is the field name in the API response
-              TaskBlipPoints: task.TaskBlipPoints,
-            };
-            if (newColumns[task.TaskStatus]) {
-              // Check if the column exists
-              newColumns[task.TaskStatus].taskIds.push(task.TaskID);
-            } else {
-              console.error(`Column ${task.TaskStatus} not found`);
-            }
-          });
-
-          setData((prevData) => ({
-            ...prevData,
-            tasks: newTasks,
-            columns: newColumns,
-          }));
-          console.log(newTasks,"newtask");
-        }
-      } catch (error) {
-        console.error("Failed to fetch tasks:", error);
-        toast.error("Failed to load tasks. Displaying demo tasks.");
-      }
-    };
 
     fetchTasks();
   }, []);
 
   const handleAddTaskSubmit = async (e) => {
     e.preventDefault(); // Prevent form from submitting and reloading the page
-
+  
     if (newTask.title.length > 25) {
       toast.error("The title cannot be more than 25 characters long.");
       return;
     }
-
+  
     try {
       // Create the task payload
       const taskPayload = {
         CompanyID: decodedToken.CompanyID,
         CompanyName: decodedToken.CompanyName,
-        AssignedBy: decodedToken.ClientID, // Assuming decodedToken has the UserName property
+        AssignedBy: decodedToken.EmployeeID, // Assuming decodedToken has the UserName property
         AssignedTo: newTask.username,
         TaskDescription: newTask.description,
         TaskAssignedDate: new Date().toISOString(), // Current date as the assigned date
         TaskDeadlineDate: newTask.dueDate, // Set to null initially
         TaskTitle: newTask.title,
-        // TaskDueDate: newTask.dueDate, // Include the due date from the form
         TaskPriority: newTask.priority, // Include the priority from the form
         TaskDepartment: newTask.department, // Include the department from the form
       };
-
+  
       // Call the createTask API
       const response = await createTask(taskPayload);
-      console.log(response);
       if (response.status === 201) {
         // Task creation was successful
-        console.log("Task created successfully:", response.data);
         toast.success("Task created successfully!");
-        fetchTasks();
-        // Clear the form fields
-        setNewTask({
+        setIsAddTaskDrawerOpen(false); // Close the drawer
+        fetchTasks(); // Refresh tasks
+        setNewTask({ // Reset the form
           title: "",
           username: "",
           description: "",
@@ -508,38 +597,6 @@ export default function App() {
           priority: "Low",
           dueDate: "",
         });
-
-        // Close the drawer
-        setIsAddTaskDrawerOpen(false);
-        const fetchTasks = async () => {
-          try {
-            const response = await getTask(decodedToken.CompanyID);
-            if (response && response.data) {
-              const tasks = response.data.tasks;
-              const taskIds = tasks.map((task) => task.id);
-              setData((prevData) => ({
-                ...prevData,
-                tasks: tasks.reduce(
-                  (acc, task) => ({ ...acc, [task.id]: task }),
-                  {}
-                ),
-                columns: {
-                  ...prevData.columns,
-                  Open: { ...prevData.columns["Open"], taskIds: taskIds },
-                },
-              }));
-            }
-          } catch (error) {
-            console.error("Failed to fetch tasks:", error);
-            // toast.error("Failed to load tasks. Displaying demo tasks.");
-          }
-        };
-        // Fetch tasks again to retrieve the updated list
-        fetchTasks();
-      } else {
-        // Task creation failed
-        console.error("Failed to create task:", response.error);
-        toast.error("Failed to create task. Please try again.");
       }
     } catch (error) {
       console.error("Failed to create task:", error);
@@ -625,7 +682,19 @@ export default function App() {
       Deleted: "Deleted",
     };
     const status = columnStatus[overId] || "Unknown";
-
+    if (overId === "Deleted") {
+      if (overId === "Deleted") {
+        const remindDelete = localStorage.getItem("remindDelete");
+  
+        if (remindDelete !== "false") {
+          setCurrentCardId(cardId);
+          setIsDeleteDialogOpen(true);
+        } else {
+          proceedWithDeletion(cardId);
+        }
+      }
+  
+    }
     if (cardId !== overId) {
       const sourceColumnId = Object.keys(data.columns).find((columnId) =>
         data.columns[columnId].taskIds.includes(cardId)
@@ -634,11 +703,47 @@ export default function App() {
       const destinationColumnId = Object.keys(data.columns).find(
         (columnId) => columnId === overId
       );
+      // if (destinationColumnId === "Deleted") {
+      //   // Call the delete function if the card is dropped in the "Deleted" column
+      //   setData((prevData) => {
+      //     const newColumns = { ...prevData.columns };
+      //     // Remove the card from its current column
+      //     newColumns[sourceColumnId].taskIds = newColumns[sourceColumnId].taskIds.filter(id => id !== cardId);
+      //     // Optionally, you can handle the deleted items in a separate state or log it
+      //     return {
+      //       ...prevData,
+      //       columns: newColumns
+      //     };
+      //   });
+      //   toast.success(`Task ${cardId} deleted successfully!`);
+      //   return; // Exit the function after handling deletion
+      // }
+      // if (destinationColumnId === "Deleted") {
+      //   // Call the delete function if the card is dropped in the "Deleted" column
+      //   deleteTask(cardId);
+      //   toast.success(`Task ${cardId} deleted successfully!`);
+      // } 
 
+      // if (sourceColumnId && destinationColumnId) {
+      //   const sourceItems = [...data.columns[sourceColumnId].taskIds];
+      //   const destinationItems = [...data.columns[destinationColumnId].taskIds];
+        
+      //   const movedItemIndex = sourceItems.indexOf(cardId);
+      //   const [movedItemId] = sourceItems.splice(movedItemIndex, 1);
+      //   // Add to destination only if it's not already there (to handle same column drop)
+      //   if (!destinationItems.includes(active.id)) {
+      //     destinationItems.push(active.id);
+      //   }
+      
       if (sourceColumnId && destinationColumnId) {
+        if (sourceColumnId === destinationColumnId) {
+          console.log("Task moved within the same column.");
+          return; // Exit the function if the task is moved within the same column
+        }
+    
         const sourceItems = [...data.columns[sourceColumnId].taskIds];
         const destinationItems = [...data.columns[destinationColumnId].taskIds];
-
+    
         const movedItemIndex = sourceItems.indexOf(cardId);
         const [movedItemId] = sourceItems.splice(movedItemIndex, 1);
         // Add to destination only if it's not already there (to handle same column drop)
@@ -660,6 +765,8 @@ export default function App() {
             },
           },
         }));
+        clearSound.play().catch((e) => console.error("Error playing the sound:", e));
+
         const movedTaskData = data.tasks[movedItemId];
         console.log(`Moved task data:`, movedTaskData);
 
@@ -677,7 +784,7 @@ export default function App() {
           Blips
         )
           .then(() => {
-            toast.success(`Task ${movedItemId} marked as ${status}!`);
+            toast.success(`Task updated`);
           })
           .catch((error) => {
             console.error("Failed to update task status:", error);
@@ -691,24 +798,15 @@ export default function App() {
     department: "",
     username: "",
   });
+
   function FilterMenu({ applyFilter }) {
-    const [usernames, setUsernames] = useState([]);
-
-    useEffect(() => {
-      // Fetch usernames from your data or API
-      const fetchUsernames = async () => {
-        try {
-          // Replace this with your logic to fetch usernames
-          const usernamesFromData = ["User1", "User2", "User3"];
-          setUsernames(usernamesFromData);
-        } catch (error) {
-          console.error("Failed to fetch usernames:", error);
-        }
-      };
-
-      fetchUsernames();
-    }, []);
-
+    const usernames = React.useMemo(() => {
+      const allUsernames = Object.values(data.tasks).map(task => task.username).filter(Boolean);
+      const uniqueUsernames = Array.from(new Set(allUsernames));
+      return uniqueUsernames.length > 0
+        ? uniqueUsernames.map(username => ({ value: username, label: username }))
+        : [{ value: 'No Users', label: 'No Users Available', isDisabled: true }];
+    }, [data.tasks]);
     const handleFilterChange = (filterType, filterValue) => {
       setFilterOptions((prevOptions) => ({
         ...prevOptions,
@@ -716,11 +814,17 @@ export default function App() {
       }));
       setIsFilterMenuOpen(false);
     };
-
+  
+    const departmentOptions = useMemo(() => {
+      const allDepartments = Object.values(data.tasks).map(task => task.department);
+      const uniqueDepartments = Array.from(new Set(allDepartments));
+      return uniqueDepartments.map(department => ({ value: department, label: department }));
+    }, [data.tasks]);
+  
     const activeFilterCount = Object.values(filterOptions).filter(
       (value) => value !== ""
     ).length;
-
+  
     return (
       <div className="filter-menu bg-white shadow-xl rounded-lg p-4 mt-4 absolute left-1/4 z-50 top-60 w-1/3">
         <h3 className="text-lg font-medium mb-4 text-center">
@@ -751,25 +855,18 @@ export default function App() {
           </div>
           <div>
             <h4 className="font-bold mb-2 text-gray-700">Department</h4>
-            {[
-              "Client Relations",
-              "Design",
-              "Development",
-              "Quality Assurance",
-            ].map((department) => (
-              <Button
-                key={department}
-                onClick={() => handleFilterChange("department", department)}
-                variant="outlined"
-                className={`hover:text-white font-bold py-2 px-4 rounded-lg block w-full mb-2 transition-colors duration-300 ease-in-out ${
-                  filterOptions.department === department
-                    ? "bg-blue-700 text-white"
-                    : "hover:bg-blue-700"
-                }`}
-              >
-                {department}
-              </Button>
+            <select
+            value={filterOptions.department}
+            onChange={(e) => handleFilterChange("department", e.target.value)}
+            className="bg-white text-gray-700 py-2 px-4 pr-8 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
+          >
+            <option value="">Select Department</option>
+            {departmentOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
             ))}
+          </select>
           </div>
           <div>
             <h4 className="font-bold mb-2 text-gray-700">Username</h4>
@@ -778,16 +875,15 @@ export default function App() {
               onChange={(e) => handleFilterChange("username", e.target.value)}
               className="bg-white text-gray-700 py-2 px-4 pr-8 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
             >
-              <option value="">Select Username</option>
-              {usernames.map((username) => (
-                <option key={username} value={username}>
-                  {username}
-                </option>
-              ))}
+             {usernames.map((username) => (
+            <option key={username.value} value={username.value} disabled={username.isDisabled}>
+              {username.label}
+            </option>
+          ))}
             </select>
           </div>
-
-          <div className=" flex justify-center">
+  
+          <div className="flex justify-center">
             <Button
               onClick={() =>
                 setFilterOptions({
@@ -805,7 +901,6 @@ export default function App() {
       </div>
     );
   }
-
   const [sortOption, setSortOption] = useState("");
   const handleFilter = (filter) => {
     // Implement filtering logic here
@@ -823,7 +918,7 @@ export default function App() {
       <div className="flex-col mt-10 justify-between mx-14 mb-7 overflow-y-hidden">
         <div className="flex justify-between mb-5 shadow-sm  p-4 rounded">
           <div className="flex bg-gray-900 text-white rounded-lg justify-center items-center p-2">
-            Total Coins : <span className=" text-lg ml-2"> 0</span>{" "}
+            Total Coins : <span className=" text-lg ml-2"> {decodedToken.blip || 0}</span>{" "}
             <img src={blips} className="w-10 h-8 animate-pulse" alt="" />
           </div>
           <div className="text-4xl capitalize font-semibold items-center flex">
@@ -1214,6 +1309,38 @@ export default function App() {
         </DndContext>
       </div>
       <ToastContainer />
+      <Dialog size="sm" open={isDeleteDialogOpen} handler={setIsDeleteDialogOpen}>
+        <DialogHeader>Confirm Deletion</DialogHeader>
+        <DialogBody>
+          Are you sure you want to delete this task? Check 'Don't remind me again' to not see this message again.
+          <div className="form-check mt-4">
+            <input
+              className="form-check-input appearance-none h-4 w-4 border border-gray-300 rounded-sm bg-white checked:bg-blue-600 checked:border-blue-600 focus:outline-none transition duration-200 mt-1 align-top bg-no-repeat bg-center bg-contain float-left mr-2 cursor-pointer"
+              type="checkbox"
+              value=""
+              id="dontRemindAgain"
+              onChange={(e) => {
+                if (e.target.checked) {
+                  localStorage.setItem("remindDelete", "false");
+                }
+              }}
+            />
+            <label className="form-check-label inline-block text-gray-800" htmlFor="dontRemindAgain">
+              Don't remind me again during this login
+            </label>
+          </div>
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            color="red"
+            onClick={() => proceedWithDeletion(currentCardId)}
+            className="mr-1"
+          >
+            Delete
+          </Button>
+          <Button onClick={handleCancelDeletion}>Cancel</Button>
+        </DialogFooter>
+      </Dialog>
     </>
   );
 }

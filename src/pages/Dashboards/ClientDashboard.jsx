@@ -108,7 +108,11 @@ const ClientDashboard = () => {
   let data = localStorage.getItem("AccessToken");
   let decodedToken = jwtDecode(data);
   console.log(decodedToken);
-
+useEffect(()=>{
+  if (decodedToken.ClientRole !== "ADMIN") {
+    navigate("/Login") // Show access denied popup if clientId is not "Admin"
+  }
+},[])
   const handleLogoutClick = () => {
     setShowLogoutDialog(true);
   };

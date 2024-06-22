@@ -125,7 +125,7 @@ export const getEmployeeList = async (companyId) => {
     try {
      
        console.log("this is deleted data",typeof taskId,"---------",taskId);
-      const response = await axios.post(`${api_url}taskmanagement/delete-task`,);
+      const response = await axios.post(`${api_url}taskmanagement/delete-task`,taskId);
   
       console.log('Task deleted successfully:', response.data);
     } catch (error) {

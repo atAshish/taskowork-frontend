@@ -94,6 +94,11 @@ const ClientDashboard = () => {
 
     fetchData();
   }, []);
+  useEffect(()=>{
+    if (decodedToken.EmployeeRole !== "Employee") {
+      navigate("/Login") // Show access denied popup if clientId is not "Admin"
+    }
+  },[])
 
 
 
