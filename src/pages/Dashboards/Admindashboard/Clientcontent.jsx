@@ -32,7 +32,7 @@ const Clientcontent = () => {
   const [inReviewTasksCount, setInReviewTasksCount] = useState(0);
 
   // Example: Assuming you have a state or a way to fetch the blip points
-  const blipPoints = decodedToken.Blip || "∞";
+  const blipPoints = decodedToken.Blip ;
   const fetchTasks = async () => {
     setIsLoading(true);
     try {
