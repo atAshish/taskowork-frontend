@@ -497,6 +497,7 @@ export default function Assigntask() {
       const response = await getTask({
         CompanyID: decodedToken.CompanyID,
         CompanyName: decodedToken.CompanyName,
+        EmployeeID: decodedToken.EmployeeID,
       });
       console.log(data, "tempdata");
 

@@ -67,6 +67,7 @@ const ClientDashboard = () => {
   const menuRef = useRef(null);
   const labelDropdownRef = useRef(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [showTokenExpiredDialog, setShowTokenExpiredDialog] = useState(false);
   const [activeLink, setActiveLink] = useState("dashboard");
   const [showMenu, setShowMenu] = useState(true);
   const [showLabelDropdown, setShowLabelDropdown] = useState(false);
@@ -113,6 +114,10 @@ const ClientDashboard = () => {
 useEffect(()=>{
   if (decodedToken.ClientRole !== "ADMIN") {
     navigate("/Login") // Show access denied popup if clientId is not "Admin"
+  }
+  const currentTime = Date.now() / 1000; // current time in seconds
+  if (decodedToken.exp < currentTime) {
+    setShowTokenExpiredDialog(true); // Show logout dialog if token is expired
   }
 },[])
   const handleLogoutClick = () => {
@@ -350,6 +355,21 @@ useEffect(()=>{
           </div>
         </div>
       )}
+      {showTokenExpiredDialog && (
+  <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+    <div className="bg-white p-8 rounded-lg shadow-lg">
+      <h4 className="text-lg font-bold mb-4">
+        Your session has expired. Please log out.
+      </h4>
+      <button
+        className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
+        onClick={handleCloseLogoutDialog}
+      >
+        Log Out
+      </button>
+    </div>
+  </div>
+)}
       {userDetailDrawerOpen && (
   <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex justify-center items-center z-50">
     <div className="bg-white rounded-lg shadow-lg w-[50vw] max-w-lg">
@@ -461,6 +481,7 @@ useEffect(()=>{
     </div>
   </div>
 )}
+
 
     </div>
   );

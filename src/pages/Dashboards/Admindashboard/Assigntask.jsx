@@ -3,7 +3,7 @@
 
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
-import React, { useState, useEffect, useRef,useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
 import { gsap } from "gsap";
 import {
@@ -11,8 +11,9 @@ import {
   Input,
   Button,
   Avatar,
-  Select,
+  // Select,
   Option,
+  Progress,
 } from "@material-tailwind/react"; // Import Input from Material Tailwind
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -25,7 +26,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { BellIcon } from "@heroicons/react/24/solid";
-import CreatableSelect from "react-select/creatable"; // Import CreatableSelect
+import Select from "react-select"; // Import CreatableSelect
 import { jwtDecode } from "jwt-decode";
 import {
   createTask,
@@ -35,7 +36,12 @@ import {
   updateTaskStatus,
 } from "../../../service/api";
 // import outlined from "@material-tailwind/react/theme/components/timeline/timelineIconColors/outlined";
-import { Dialog, DialogHeader, DialogBody, DialogFooter } from "@material-tailwind/react";
+import {
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+} from "@material-tailwind/react";
 
 const data = localStorage.getItem("AccessToken");
 let decodedToken = {};
@@ -107,14 +113,14 @@ const initialData = {
 // Dependency array to re-run the effect when CompanyID changes
 function mapStatusToColumnId(apiStatus) {
   const statusMapping = {
-    Inprogress: "In Progress",  // API status to your column ID
+    Inprogress: "In Progress", // API status to your column ID
     Open: "Open",
     Review: "Review",
     Completed: "Completed",
-    Deleted: "Deleted"
+    Deleted: "Deleted",
   };
 
-  return statusMapping[apiStatus] || "Unknown";  // Default to "Unknown" if no match found
+  return statusMapping[apiStatus] || "Unknown"; // Default to "Unknown" if no match found
 }
 
 const handleMarkAsCompleted = (taskId) => {
@@ -251,10 +257,10 @@ function Draggable({
       }}
       {...draggableProps}
     >
-    <div
-  className={`absolute left-0 top-0 bottom-0 w-1`}
-  style={{ backgroundColor: getPriorityColor(priority) }}
-></div>
+      <div
+        className={`absolute left-0 top-0 bottom-0 w-1`}
+        style={{ backgroundColor: getPriorityColor(priority) }}
+      ></div>
       <div
         className="flex justify-between items-center cursor-pointer"
         onDoubleClick={toggleAccordion} // Changed from onClick to onDoubleClick
@@ -279,7 +285,7 @@ function Draggable({
           <p className="text-gray-800">
             {highlightText(text.length > 40 ? `${text.slice(0, 28)}...` : text)}
           </p>
-        
+
           <p className="text-gray-500 mt-2">{daysLeft} days left</p>
           <Chip
             size="sm"
@@ -408,6 +414,7 @@ export default function Assigntask() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentCardId, setCurrentCardId] = useState(null);
   const [isAddTaskDrawerOpen, setIsAddTaskDrawerOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [newTask, setNewTask] = useState({
     title: "",
     username: "",
@@ -418,26 +425,32 @@ export default function Assigntask() {
   });
   const proceedWithDeletion = (cardId) => {
     // Call the API to delete the task from the backend if necessary
-    deleteTask( {CompanyID: decodedToken.CompanyID, CompanyName: decodedToken.CompanyName, TaskID: cardId})
+    deleteTask({
+      CompanyID: decodedToken.CompanyID,
+      CompanyName: decodedToken.CompanyName,
+      TaskID: cardId,
+    })
       .then(() => {
         toast.success(`Task ${cardId} deleted successfully!`);
         setIsDeleteDialogOpen(false);
-  
+
         // Update the local state to remove the task from the UI
         setData((prevData) => {
           const newColumns = { ...prevData.columns };
-          Object.keys(newColumns).forEach(column => {
-            newColumns[column].taskIds = newColumns[column].taskIds.filter(id => id !== cardId);
+          Object.keys(newColumns).forEach((column) => {
+            newColumns[column].taskIds = newColumns[column].taskIds.filter(
+              (id) => id !== cardId
+            );
           });
-  
+
           // Optionally, remove the task from the tasks object if it's maintained separately
           const newTasks = { ...prevData.tasks };
           delete newTasks[cardId];
-  
+
           return {
             ...prevData,
             tasks: newTasks,
-            columns: newColumns
+            columns: newColumns,
           };
         });
       })
@@ -451,7 +464,7 @@ export default function Assigntask() {
     setIsDeleteDialogOpen(false);
   };
   const clearSound = new Audio();
-  clearSound.src =  Sound ;
+  clearSound.src = Sound;
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   clearSound.addEventListener(
     "canplaythrough",
@@ -475,6 +488,7 @@ export default function Assigntask() {
   };
 
   const [username, Setusername] = useState([]);
+  const [departments, SetDepartments] = useState([]);
 
   useEffect(() => {
     fetchEmployeeList();
@@ -485,6 +499,15 @@ export default function Assigntask() {
       const response = await getEmployeeList(decodedToken.CompanyID);
       Setusername(response.employees);
       console.log(username, "employees");
+      const departments = Array.from(
+        new Set(response.employees.map((emp) => emp.EmployeeDepartment))
+      );
+      SetDepartments(
+        departments.map((dept) => ({
+          value: dept,
+          label: dept,
+        }))
+      );
     } catch (error) {
       console.error("Failed to fetch employee list:", error);
       toast.error("Failed to fetch employee list");
@@ -492,6 +515,7 @@ export default function Assigntask() {
     }
   };
   const fetchTasks = async () => {
+    setIsLoading(true);
     try {
       const response = await getTask({
         CompanyID: decodedToken.CompanyID,
@@ -529,10 +553,10 @@ export default function Assigntask() {
             assignedTo: task.AssignedTo, // Assuming 'AssignedTo' is the field name in the API response
             TaskBlipPoints: task.TaskBlipPoints,
           };
-        
+
           // Use the mapping function to get the correct column ID
           const columnId = mapStatusToColumnId(task.TaskStatus);
-        
+
           if (newColumns[columnId]) {
             newColumns[columnId].taskIds.push(task.TaskID);
           } else {
@@ -545,28 +569,28 @@ export default function Assigntask() {
           tasks: newTasks,
           columns: newColumns,
         }));
-        console.log(newTasks,"newtask");
+        console.log(newTasks, "newtask");
       }
+      setIsLoading(true);
     } catch (error) {
       console.error("Failed to fetch tasks:", error);
       toast.error("Failed to load tasks. Displaying demo tasks.");
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-
-
     fetchTasks();
   }, []);
 
   const handleAddTaskSubmit = async (e) => {
     e.preventDefault(); // Prevent form from submitting and reloading the page
-  
+
     if (newTask.title.length > 25) {
       toast.error("The title cannot be more than 25 characters long.");
       return;
     }
-  
+
     try {
       // Create the task payload
       const taskPayload = {
@@ -581,7 +605,7 @@ export default function Assigntask() {
         TaskPriority: newTask.priority, // Include the priority from the form
         TaskDepartment: newTask.department, // Include the department from the form
       };
-  
+
       // Call the createTask API
       const response = await createTask(taskPayload);
       if (response.status === 201) {
@@ -589,7 +613,8 @@ export default function Assigntask() {
         toast.success("Task created successfully!");
         setIsAddTaskDrawerOpen(false); // Close the drawer
         fetchTasks(); // Refresh tasks
-        setNewTask({ // Reset the form
+        setNewTask({
+          // Reset the form
           title: "",
           username: "",
           description: "",
@@ -685,7 +710,7 @@ export default function Assigntask() {
     if (overId === "Deleted") {
       if (overId === "Deleted") {
         const remindDelete = localStorage.getItem("remindDelete");
-  
+
         if (remindDelete !== "false") {
           setCurrentCardId(cardId);
           setIsDeleteDialogOpen(true);
@@ -693,7 +718,6 @@ export default function Assigntask() {
           proceedWithDeletion(cardId);
         }
       }
-  
     }
     if (cardId !== overId) {
       const sourceColumnId = Object.keys(data.columns).find((columnId) =>
@@ -722,28 +746,28 @@ export default function Assigntask() {
       //   // Call the delete function if the card is dropped in the "Deleted" column
       //   deleteTask(cardId);
       //   toast.success(`Task ${cardId} deleted successfully!`);
-      // } 
+      // }
 
       // if (sourceColumnId && destinationColumnId) {
       //   const sourceItems = [...data.columns[sourceColumnId].taskIds];
       //   const destinationItems = [...data.columns[destinationColumnId].taskIds];
-        
+
       //   const movedItemIndex = sourceItems.indexOf(cardId);
       //   const [movedItemId] = sourceItems.splice(movedItemIndex, 1);
       //   // Add to destination only if it's not already there (to handle same column drop)
       //   if (!destinationItems.includes(active.id)) {
       //     destinationItems.push(active.id);
       //   }
-      
+
       if (sourceColumnId && destinationColumnId) {
         if (sourceColumnId === destinationColumnId) {
           console.log("Task moved within the same column.");
           return; // Exit the function if the task is moved within the same column
         }
-    
+
         const sourceItems = [...data.columns[sourceColumnId].taskIds];
         const destinationItems = [...data.columns[destinationColumnId].taskIds];
-    
+
         const movedItemIndex = sourceItems.indexOf(cardId);
         const [movedItemId] = sourceItems.splice(movedItemIndex, 1);
         // Add to destination only if it's not already there (to handle same column drop)
@@ -765,7 +789,9 @@ export default function Assigntask() {
             },
           },
         }));
-        clearSound.play().catch((e) => console.error("Error playing the sound:", e));
+        clearSound
+          .play()
+          .catch((e) => console.error("Error playing the sound:", e));
 
         const movedTaskData = data.tasks[movedItemId];
         console.log(`Moved task data:`, movedTaskData);
@@ -801,11 +827,22 @@ export default function Assigntask() {
 
   function FilterMenu({ applyFilter }) {
     const usernames = React.useMemo(() => {
-      const allUsernames = Object.values(data.tasks).map(task => task.username).filter(Boolean);
+      const allUsernames = Object.values(data.tasks)
+        .map((task) => task.username)
+        .filter(Boolean);
       const uniqueUsernames = Array.from(new Set(allUsernames));
       return uniqueUsernames.length > 0
-        ? uniqueUsernames.map(username => ({ value: username, label: username }))
-        : [{ value: 'No Users', label: 'No Users Available', isDisabled: true }];
+        ? uniqueUsernames.map((username) => ({
+            value: username,
+            label: username,
+          }))
+        : [
+            {
+              value: "No Users",
+              label: "No Users Available",
+              isDisabled: true,
+            },
+          ];
     }, [data.tasks]);
     const handleFilterChange = (filterType, filterValue) => {
       setFilterOptions((prevOptions) => ({
@@ -814,17 +851,22 @@ export default function Assigntask() {
       }));
       setIsFilterMenuOpen(false);
     };
-  
+
     const departmentOptions = useMemo(() => {
-      const allDepartments = Object.values(data.tasks).map(task => task.department);
+      const allDepartments = Object.values(data.tasks).map(
+        (task) => task.department
+      );
       const uniqueDepartments = Array.from(new Set(allDepartments));
-      return uniqueDepartments.map(department => ({ value: department, label: department }));
+      return uniqueDepartments.map((department) => ({
+        value: department,
+        label: department,
+      }));
     }, [data.tasks]);
-  
+
     const activeFilterCount = Object.values(filterOptions).filter(
       (value) => value !== ""
     ).length;
-  
+
     return (
       <div className="filter-menu bg-white shadow-xl rounded-lg p-4 mt-4 absolute left-1/4 z-50 top-60 w-1/3">
         <h3 className="text-lg font-medium mb-4 text-center">
@@ -856,17 +898,17 @@ export default function Assigntask() {
           <div>
             <h4 className="font-bold mb-2 text-gray-700">Department</h4>
             <select
-            value={filterOptions.department}
-            onChange={(e) => handleFilterChange("department", e.target.value)}
-            className="bg-white text-gray-700 py-2 px-4 pr-8 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
-          >
-            <option value="">Select Department</option>
-            {departmentOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+              value={filterOptions.department}
+              onChange={(e) => handleFilterChange("department", e.target.value)}
+              className="bg-white text-gray-700 py-2 px-4 pr-8 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
+            >
+              <option value="">Select Department</option>
+              {departmentOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <h4 className="font-bold mb-2 text-gray-700">Username</h4>
@@ -875,14 +917,18 @@ export default function Assigntask() {
               onChange={(e) => handleFilterChange("username", e.target.value)}
               className="bg-white text-gray-700 py-2 px-4 pr-8 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
             >
-             {usernames.map((username) => (
-            <option key={username.value} value={username.value} disabled={username.isDisabled}>
-              {username.label}
-            </option>
-          ))}
+              {usernames.map((username) => (
+                <option
+                  key={username.value}
+                  value={username.value}
+                  disabled={username.isDisabled}
+                >
+                  {username.label}
+                </option>
+              ))}
             </select>
           </div>
-  
+
           <div className="flex justify-center">
             <Button
               onClick={() =>
@@ -918,7 +964,7 @@ export default function Assigntask() {
       <div className="flex-col mt-10 justify-between mx-14 mb-7 overflow-y-hidden">
         <div className="flex justify-between mb-5 shadow-sm  p-4 rounded">
           <div className="flex bg-gray-900 text-white rounded-lg justify-center items-center p-2">
-            Total Coins : <span className=" text-lg ml-2"> {decodedToken.blip || 0}</span>{" "}
+            Total Coins : <span className=" text-lg ml-2"> ∞</span>{" "}
             <img src={blips} className="w-10 h-8 animate-pulse" alt="" />
           </div>
           <div className="text-4xl capitalize font-semibold items-center flex">
@@ -1095,7 +1141,7 @@ export default function Assigntask() {
                 >
                   Username
                 </label>
-                <CreatableSelect
+                <Select
                   options={username.map((user) => ({
                     value: user.EmployeeID,
                     label: user.EmployeeName,
@@ -1127,22 +1173,8 @@ export default function Assigntask() {
                 >
                   Department
                 </label>
-                <CreatableSelect
-                  options={[
-                    { value: "Analysis", label: "Analysis" },
-                    { value: "Design", label: "Design" },
-                    { value: "Optimization", label: "Optimization" },
-                    { value: "Development", label: "Development" },
-                    { value: "Client Relations", label: "Client Relations" },
-                    { value: "Quality Assurance", label: "Quality Assurance" },
-                    { value: "Technical Support", label: "Technical Support" },
-                    { value: "Operations", label: "Operations" },
-                    { value: "HR", label: "HR" },
-                    { value: "Manufacturing", label: "Manufacturing" },
-                    { value: "Service", label: "Service" },
-                    { value: "Logistics", label: "Logistics" },
-                    { value: "IT", label: "IT" },
-                  ]}
+                <Select
+                  options={departments}
                   value={{
                     value: newTask.department,
                     label: newTask.department
@@ -1187,20 +1219,24 @@ export default function Assigntask() {
                 >
                   Priority
                 </label>
-                <Select
+                <select
                   name="priority"
                   id="priority"
                   value={newTask.priority}
-                  onChange={(value) =>
-                    setNewTask((prev) => ({ ...prev, priority: value }))
+                  onChange={(e) =>
+                    setNewTask((prev) => ({
+                      ...prev,
+                      priority: e.target.value,
+                    }))
                   }
-                  placeholder="Select Priority"
                   required
+                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                 >
-                  <Option value="High">High</Option>
-                  <Option value="Medium">Medium</Option>
-                  <Option value="Low">Low</Option>
-                </Select>
+                  <option value="">Select Priority</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
               </div>
               <div>
                 <label
@@ -1309,10 +1345,15 @@ export default function Assigntask() {
         </DndContext>
       </div>
       <ToastContainer />
-      <Dialog size="sm" open={isDeleteDialogOpen} handler={setIsDeleteDialogOpen}>
+      <Dialog
+        size="sm"
+        open={isDeleteDialogOpen}
+        handler={setIsDeleteDialogOpen}
+      >
         <DialogHeader>Confirm Deletion</DialogHeader>
         <DialogBody>
-          Are you sure you want to delete this task? Check 'Don't remind me again' to not see this message again.
+          Are you sure you want to delete this task? Check 'Don't remind me
+          again' to not see this message again.
           <div className="form-check mt-4">
             <input
               className="form-check-input appearance-none h-4 w-4 border border-gray-300 rounded-sm bg-white checked:bg-blue-600 checked:border-blue-600 focus:outline-none transition duration-200 mt-1 align-top bg-no-repeat bg-center bg-contain float-left mr-2 cursor-pointer"
@@ -1325,7 +1366,10 @@ export default function Assigntask() {
                 }
               }}
             />
-            <label className="form-check-label inline-block text-gray-800" htmlFor="dontRemindAgain">
+            <label
+              className="form-check-label inline-block text-gray-800"
+              htmlFor="dontRemindAgain"
+            >
               Don't remind me again during this login
             </label>
           </div>
