@@ -147,7 +147,7 @@ const Clientcontent = () => {
               </div>
             </div>
             <hr className="my-2" />
-            <p className="text-sm">{task.TaskDescription}</p>
+            <p className="text-sm">{task.TaskTitle}</p>
             <div className="mt-2">
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${

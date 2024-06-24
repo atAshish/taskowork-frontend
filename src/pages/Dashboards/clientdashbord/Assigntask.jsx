@@ -334,8 +334,8 @@ function Draggable({
               <div className=" ">
                 <h1>Description</h1>
                 <p
-                  className="text-gray-800 text-sm mb-4 whitespace-pre-wrap flex"
-                  style={{ wordWrap: "break-word", whiteSpace: "normal" }}
+                  className="text-gray-800 text-sm mb-4 whitespace-pre-wrap "
+                  style={{ wordWrap: "break-word", whiteSpace: "pre-wrap" }} // Updated styles for wrapping text
                 >
                   {text}
                 </p>

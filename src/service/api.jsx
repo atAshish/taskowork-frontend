@@ -21,7 +21,7 @@ axios.interceptors.request.use(
 
 export const updateTaskStatus = async (companyID, companyName, taskID, taskStatus,AssignedTo,Blips) => {
   try {
-    const response = await axios.put(`${api_url}taskmanagement/change-status`, {
+    const response = await axios.put(`${api_url}/api/taskmanagement/change-status`, {
       CompanyID: companyID,
       CompanyName: companyName,
       TaskID: taskID,
@@ -40,7 +40,7 @@ export const updateTaskStatus = async (companyID, companyName, taskID, taskStatu
 export const handleLogin = async (formData) => {
     console.log(formData);
     try {
-        const apiResponse = await axios.post(`${api_url}authentication/client-login`, formData);
+        const apiResponse = await axios.post(`${api_url}/api/authentication/client-login`, formData);
         return apiResponse.data; // Return response data if needed
     } catch (error) {
         throw error; // Rethrow error to handle it where this function is called
@@ -49,7 +49,7 @@ export const handleLogin = async (formData) => {
 export const handle_employeLogin = async (data) => {
   console.log(data);
   try {
-      const apiResponse = await axios.post(`${api_url}authentication/employee-login`,data );
+      const apiResponse = await axios.post(`${api_url}/api/authentication/employee-login`,data );
       return apiResponse.data; // Return response data if needed
   } catch (error) {
       throw error; // Rethrow error to handle it where this function is called
@@ -60,7 +60,7 @@ export const handle_employeLogin = async (data) => {
 export const handleSignup = async (formData) => {
     console.log(formData);
     try {
-        const apiResponse = await axios.post(`${api_url}authentication/client-signup`, formData);
+        const apiResponse = await axios.post(`${api_url}/api/authentication/client-signup`, formData);
         return apiResponse.data; // Return response data if needed
     } catch (error) {
         throw error; // Rethrow error to handle it where this function is called
@@ -70,7 +70,7 @@ export const handleSignup = async (formData) => {
 export const createTask = async (taskData) => {
     try {
         console.log(taskData);
-        const response = await axios.post(`${api_url}taskmanagement/create-task`, taskData);
+        const response = await axios.post(`${api_url}/api/taskmanagement/create-task`, taskData);
       // Optionally, you can update the UI or perform additional actions after successful task creation
       console.log("Task assigned successfully!");
       return response;
@@ -83,7 +83,7 @@ export const createTask = async (taskData) => {
   export const getTask = async (data) => {
     console.log("this is task api",data)
     try {
-      const Response = await axios.post(`${api_url}taskmanagement/get-task`,data);
+      const Response = await axios.post(`${api_url}/api/taskmanagement/get-task`,data);
       return Response.data;     
     } catch (error) {
       console.error('Error fetching task:', error);
@@ -95,7 +95,7 @@ export const createTask = async (taskData) => {
 
  export const registerEmployee = async (formData) => {
 try {
-        const apiResponse = await axios.post(`${api_url}employee/register-new-employee`, formData);
+        const apiResponse = await axios.post(`${api_url}/api/employee/register-new-employee`, formData);
         return apiResponse.data; // Return response data if needed
     } catch (error) {
         throw error; // Rethrow error to handle it where this function is called
@@ -103,7 +103,7 @@ try {
 };
 export const updateEmployee = async (id,formData) => {
   try {
-          const apiResponse = await axios.put(`${api_url}employee/update-employee/${id}`, formData);
+          const apiResponse = await axios.put(`${api_url}/api/employee/update-employee/${id}`, formData);
           return apiResponse.data; // Return response data if needed
       } catch (error) {
           throw error; // Rethrow error to handle it where this function is called
@@ -113,7 +113,7 @@ export const updateEmployee = async (id,formData) => {
 export const getEmployeeList = async (companyId) => {
     try {
       console.log(companyId);
-      const response = await axios.post(`${api_url}employee/get-employees`,{CompanyID:companyId});
+      const response = await axios.post(`${api_url}/api/employee/get-employees`,{CompanyID:companyId});
       return response.data; // Return the list of employees
     } catch (error) {
       throw error; // Rethrow error to handle it where this function is called
@@ -125,7 +125,7 @@ export const getEmployeeList = async (companyId) => {
     try {
      
        console.log("this is deleted data",typeof taskId,"---------",taskId);
-      const response = await axios.post(`${api_url}taskmanagement/delete-task`,taskId);
+      const response = await axios.post(`${api_url}/api/taskmanagement/delete-task`,taskId);
   
       console.log('Task deleted successfully:', response.data);
     } catch (error) {
@@ -137,7 +137,7 @@ export const getEmployeeList = async (companyId) => {
   export const DeleteEmployee = async (id,formData) =>{
     try {
       console.log('Deleting employee', formData,"this is", id);
-      const response=  await axios.delete(`${api_url}employee/delete-employee/${id}`,formData)
+      const response=  await axios.delete(`${api_url}/api/employee/delete-employee/${id}`,formData)
       return response.data;
     } catch (error) {
       console.log(error)

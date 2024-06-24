@@ -236,16 +236,17 @@ const EmployeeList = () => {
     setIsReportDialogOpen(false);
   };
 
-  const filterEmployees = (employee, searchQuery) => {
-    const { EmployeeName, Role, EmployeeEmail, EmployeeDepartment } = employee;
-    const query = searchQuery.toLowerCase();
-    return (
-      EmployeeName.toLowerCase().includes(query) ||
-      Role.toLowerCase().includes(query) ||
-      EmployeeEmail.toLowerCase().includes(query) ||
-      EmployeeDepartment.toLowerCase().includes(query)
-    );
-  };
+const filterEmployees = (employee, searchQuery) => {
+  const { EmployeeID, EmployeeName, Role, EmployeeEmail, EmployeeDepartment } = employee;
+  const query = searchQuery.toLowerCase();
+  return (
+    EmployeeID.toString().includes(query) ||
+    EmployeeName.toLowerCase().includes(query) ||
+    Role.toLowerCase().includes(query) ||
+    EmployeeEmail.toLowerCase().includes(query) ||
+    EmployeeDepartment.toLowerCase().includes(query)
+  );
+};
 
   const filteredEmployees = employees.filter((employee) =>
     filterEmployees(employee, searchQuery)

@@ -11,7 +11,7 @@ import Calendar from "../../../components/dashboard/Calender/Calender";
 import { getTask } from "../../../service/api";
 import { jwtDecode } from "jwt-decode";
 import blips from "../../../assets/img/WhatsApp_Image_2024-05-26_at_11.49.25_AM-removebg-preview.png";
-import { gsap } from 'gsap';
+import { gsap } from "gsap";
 
 const Clientcontent = () => {
   const [date, setDate] = useState(new Date());
@@ -53,7 +53,8 @@ const Clientcontent = () => {
 
       fetchedTasks.forEach((task) => {
         const status = task.TaskStatus.toLowerCase().trim();
-        if (status === "review") { // Handle "Review" specifically if necessary
+        if (status === "review") {
+          // Handle "Review" specifically if necessary
           statusCounts.inreview++;
         } else if (statusCounts.hasOwnProperty(status)) {
           statusCounts[status]++;
@@ -87,6 +88,8 @@ const Clientcontent = () => {
   const renderTasks = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+  
+
     const todaysTasks = tasks
       .filter(
         (task) =>
@@ -117,11 +120,18 @@ const Clientcontent = () => {
     }
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {todaysTasks.map((task, index) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-hidden" >
+       {todaysTasks.map((task, index) => {
+        const descriptionWords = task.TaskDescription.split(" ");
+        const displayedDescription =
+          descriptionWords.length > 25
+            ? `${descriptionWords.slice(0, 25).join(" ")}...`
+            : task.TaskDescription;
+
+        return (
           <div
             key={index}
-            className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow duration-300"
+            className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition-shadow duration-300 overflow-hidden"
           >
             <div className="flex justify-between items-center gap-5">
               <div>
@@ -148,7 +158,7 @@ const Clientcontent = () => {
               </div>
             </div>
             <hr className="my-2" />
-            <p className="text-sm">{task.TaskDescription}</p>
+            <p className="text-sm">{task.TaskTitle}</p>
             <div className="mt-2">
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${
@@ -163,7 +173,8 @@ const Clientcontent = () => {
               </span>
             </div>
           </div>
-        ))}
+        );
+      })}
       </div>
     );
   };
@@ -237,15 +248,16 @@ const Clientcontent = () => {
   const blipRef = useRef(null);
 
   useEffect(() => {
-    gsap.fromTo(blipRef.current, 
-      { boxShadow: '0 0 0px rgba(255,255,255,0)' },
+    gsap.fromTo(
+      blipRef.current,
+      { boxShadow: "0 0 0px rgba(255,255,255,0)" },
       {
-        boxShadow: '0 0 20px rgba(255,255,255,1)',
+        boxShadow: "0 0 20px rgba(255,255,255,1)",
         repeat: -1,
         yoyo: true,
         duration: 0.5,
-        ease: 'power1.inOut',
-        paused: true
+        ease: "power1.inOut",
+        paused: true,
       }
     );
   }, []);
@@ -380,8 +392,18 @@ const Clientcontent = () => {
                 src={blips}
                 alt="Blip Points"
                 className="w-fit cursor-pointer hover:animate-spin h-24 rounded-full border-gray-300 transition-transform duration-500"
-                onMouseEnter={() => gsap.to(blipRef.current, { boxShadow: '0 0 20px rgba(255,255,255,1)', scale: 1.1 })}
-                onMouseLeave={() => gsap.to(blipRef.current, { boxShadow: '0 0 0px rgba(255,255,255,0)', scale: 1 })}
+                onMouseEnter={() =>
+                  gsap.to(blipRef.current, {
+                    boxShadow: "0 0 20px rgba(255,255,255,1)",
+                    scale: 1.1,
+                  })
+                }
+                onMouseLeave={() =>
+                  gsap.to(blipRef.current, {
+                    boxShadow: "0 0 0px rgba(255,255,255,0)",
+                    scale: 1,
+                  })
+                }
               />
             </div>
             <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white p-4 rounded-lg shadow-lg text-center w-3/4 h-3/6 relative bottom-1 ">

@@ -62,12 +62,26 @@ const EmployeeList = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [departments, setDepartments] = useState([]);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [reportParams, setReportParams] = useState({
+    startDate: "",
+    endDate: "",
+    format: "PDF", // default format
+  });
+
+  const handleReportParamsChange = (e) => {
+    const { name, value } = e.target;
+    setReportParams((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   useEffect(() => {
     fetchEmployeeList();
   }, []);
 
-   const fetchEmployeeList = async () => {
+  const fetchEmployeeList = async () => {
     setLoading(true);
     try {
       const response = await getEmployeeList(decodedToken.CompanyID);
@@ -214,20 +228,42 @@ const EmployeeList = () => {
     setIsDialogOpen(true);
   };
 
-  const filterEmployees = (employee, searchQuery) => {
-    const { EmployeeName, Role, EmployeeEmail, EmployeeDepartment } = employee;
-    const query = searchQuery.toLowerCase();
-    return (
-      EmployeeName.toLowerCase().includes(query) ||
-      Role.toLowerCase().includes(query) ||
-      EmployeeEmail.toLowerCase().includes(query) ||
-      EmployeeDepartment.toLowerCase().includes(query)
-    );
+  const openReportDialog = () => {
+    setIsReportDialogOpen(true);
   };
+
+  const closeReportDialog = () => {
+    setIsReportDialogOpen(false);
+  };
+
+const filterEmployees = (employee, searchQuery) => {
+  const { EmployeeID, EmployeeName, Role, EmployeeEmail, EmployeeDepartment } = employee;
+  const query = searchQuery.toLowerCase();
+  return (
+    EmployeeID.toString().includes(query) ||
+    EmployeeName.toLowerCase().includes(query) ||
+    Role.toLowerCase().includes(query) ||
+    EmployeeEmail.toLowerCase().includes(query) ||
+    EmployeeDepartment.toLowerCase().includes(query)
+  );
+};
 
   const filteredEmployees = employees.filter((employee) =>
     filterEmployees(employee, searchQuery)
   );
+  const handleDownloadReport = (employee) => {
+    // Example function to download a report for an employee
+    // This is a placeholder: you'll need to implement the actual download logic based on your requirements
+    const reportData = JSON.stringify(employee, null, 2);
+    const blob = new Blob([reportData], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Report-${employee.EmployeeID}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="h-[99vh] p-4 md:p-8">
@@ -527,6 +563,103 @@ const EmployeeList = () => {
               </Button>
             </form>
           </Dialog>
+          <Dialog
+            open={isReportDialogOpen}
+            handler={closeReportDialog}
+            className="bg-white rounded-xl shadow-2xl p-6 m-4 max-w-md mx-auto"
+            size="sm"
+          >
+            <form className="space-y-6">
+              <h3 className="text-2xl font-bold text-center text-gray-800 mb-6">
+                Generate Report
+              </h3>
+              <div className="space-y-4">
+                <div className="flex flex-col">
+                  <label
+                    htmlFor="startDate"
+                    className="text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Start Date
+                  </label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    name="startDate"
+                    value={reportParams.startDate}
+                    onChange={handleReportParamsChange}
+                    required
+                    className="rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label
+                    htmlFor="endDate"
+                    className="text-sm font-medium text-gray-700 mb-1"
+                  >
+                    End Date
+                  </label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    name="endDate"
+                    value={reportParams.endDate}
+                    onChange={handleReportParamsChange}
+                    required
+                    className="rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label
+                    htmlFor="format"
+                    className="text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Format
+                  </label>
+                  <Select
+                    id="format"
+                    name="format"
+                    value={{
+                      value: reportParams.format,
+                      label: reportParams.format.toUpperCase(),
+                    }}
+                    onChange={(selectedOption) =>
+                      handleReportParamsChange({
+                        target: { name: "format", value: selectedOption.value },
+                      })
+                    }
+                    options={[
+                      { value: "json", label: "JSON" },
+                      { value: "xlsx", label: "Excel" },
+                      { value: "pdf", label: "PDF" },
+                    ]}
+                    className="rounded-md"
+                    styles={{
+                      control: (provided) => ({
+                        ...provided,
+                        borderColor: "#D1D5DB",
+                        "&:hover": { borderColor: "#3B82F6" },
+                      }),
+                      option: (provided, state) => ({
+                        ...provided,
+                        backgroundColor: state.isSelected ? "#3B82F6" : "white",
+                        color: state.isSelected ? "white" : "black",
+                      }),
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-center pt-4">
+                <Button
+                  type="button"
+                  onClick={handleDownloadReport}
+                  variant="gradient"
+                  className="bg-gradient-to-r from-blue-gray-800 to-blue-gray-900 text-white"
+                >
+                  Download Report
+                </Button>
+              </div>
+            </form>
+          </Dialog>
           {loading ? (
             <div className="flex justify-center items-center h-full">
               <Spinner color="black" className="w-5 h-5" />
@@ -536,7 +669,9 @@ const EmployeeList = () => {
               <table className="min-w-full bg-white border border-gray-200">
                 <thead>
                   <tr>
-                    <th className="text-left py-2 px-4 border-b">Employee ID</th>
+                    <th className="text-left py-2 px-4 border-b">
+                      Employee ID
+                    </th>
                     <th className="text-left py-2 px-4 border-b">Name</th>
                     <th className="text-left py-2 px-4 border-b">Email</th>
                     <th className="text-left py-2 px-4 border-b">Role</th>
@@ -548,7 +683,9 @@ const EmployeeList = () => {
                   {filteredEmployees.length > 0 ? (
                     filteredEmployees.map((employee) => (
                       <tr key={employee.EmployeeID}>
-                        <td className="text-left py-2 px-4 border-b">{employee.EmployeeID}</td>
+                        <td className="text-left py-2 px-4 border-b">
+                          {employee.EmployeeID}
+                        </td>
                         <td className="text-left py-2 px-4 border-b">
                           {employee.EmployeeName}
                         </td>
@@ -569,6 +706,13 @@ const EmployeeList = () => {
                             variant="filled"
                           >
                             Edit
+                          </Button>
+                          <Button
+                            onClick={() => openReportDialog(employee)}
+                            size="sm"
+                            variant="filled"
+                          >
+                            Report
                           </Button>
                           <Button
                             onClick={() => handleDelete(employee)}
